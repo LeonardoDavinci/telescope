@@ -3,6 +3,7 @@ package com.mattprecious.telescope;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,61 +18,66 @@ import java.util.Set;
  * <p>The {@link #getBody()} method can be overridden to pre-populate the body of the email.</p>
  */
 public class EmailLens implements Lens {
-  private final Context context;
-  private final String subject;
-  private final String[] addresses;
 
-  /** @deprecated Use {@link #EmailLens(Context, String, String...)}. */
-  @Deprecated
-  public EmailLens(Context context, String[] addresses, String subject) {
-    this(context, subject, addresses);
-  }
+	private final Context context;
+	private final String subject;
+	private final String[] addresses;
 
-  public EmailLens(Context context, String subject, String... addresses) {
-    this.context = context;
-    this.addresses = addresses == null ? null : addresses.clone();
-    this.subject = subject;
-  }
+	/** @deprecated Use {@link #EmailLens(Context, String, String...)}. */
+	@Deprecated
+	public EmailLens(Context context, String[] addresses, String subject) {
+		this(context, subject, addresses);
+	}
 
-  /** Create the email body. */
-  protected String getBody() {
-    return null;
-  }
+	public EmailLens(Context context, String subject, String... addresses) {
+		this.context = context;
+		this.addresses = addresses == null ? null : addresses.clone();
+		this.subject = subject;
+	}
 
-  @Override public void onCapture(File screenshot) {
-    Intent intent = new Intent(Intent.ACTION_SEND_MULTIPLE);
-    intent.setType("message/rfc822");
+	/** Create the email body. */
+	protected String getBody() {
+		return null;
+	}
 
-    if (subject != null) {
-      intent.putExtra(Intent.EXTRA_SUBJECT, subject);
-    }
+	@Override
+	public void onCapture(File... attachments) {
+		Intent intent = new Intent(Intent.ACTION_SEND_MULTIPLE);
+		intent.setType("message/rfc822");
 
-    if (addresses != null) {
-      intent.putExtra(Intent.EXTRA_EMAIL, addresses);
-    }
+		if (subject != null) {
+			intent.putExtra(Intent.EXTRA_SUBJECT, subject);
+		}
 
-    String body = getBody();
-    if (body != null) {
-      intent.putExtra(Intent.EXTRA_TEXT, body);
-    }
+		if (addresses != null) {
+			intent.putExtra(Intent.EXTRA_EMAIL, addresses);
+		}
 
-    Set<Uri> additionalAttachments = getAdditionalAttachments();
-    ArrayList<Uri> attachments = new ArrayList<>(additionalAttachments.size() + 1 /* screenshot */);
-    if (!additionalAttachments.isEmpty()) {
-      attachments.addAll(additionalAttachments);
-    }
-    if (screenshot != null) {
-      attachments.add(Uri.fromFile(screenshot));
-    }
+		String body = getBody();
+		if (body != null) {
+			intent.putExtra(Intent.EXTRA_TEXT, body);
+		}
 
-    if (!attachments.isEmpty()) {
-      intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, attachments);
-    }
+		Set<Uri> additionalAttachments = getAdditionalAttachments();
+		ArrayList<Uri> attachmentsList = new ArrayList<>(additionalAttachments.size() + attachments.length);
+		if (!additionalAttachments.isEmpty()) {
+			attachmentsList.addAll(additionalAttachments);
+		}
 
-    context.startActivity(intent);
-  }
+		if (attachments != null) {
+			for (int i = 0; i < attachments.length; i++) {
+				attachmentsList.add(Uri.fromFile(attachments[i]));
+			}
+		}
 
-  protected Set<Uri> getAdditionalAttachments() {
-    return Collections.emptySet();
-  }
+		if (!attachmentsList.isEmpty()) {
+			intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, attachmentsList);
+		}
+
+		context.startActivity(intent);
+	}
+
+	protected Set<Uri> getAdditionalAttachments() {
+		return Collections.emptySet();
+	}
 }

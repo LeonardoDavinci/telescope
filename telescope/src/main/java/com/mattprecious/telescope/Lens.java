@@ -13,5 +13,5 @@ public interface Lens {
    * @param screenshot A reference to the screenshot that was captured. Can be null if screenshots
    * were disabled.
    */
-  void onCapture(File screenshot);
+  void onCapture(final File... attachments);
 }
